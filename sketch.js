@@ -1,15 +1,26 @@
 var watercolor,
-    center;
+    center,
+    numSides,
+    deformationTimes,
+    numLayers;
+
+numSides = 10;
+numLayers = 100;
+deformationTimes = 5;
 
 function setup() {
-    createCanvas(400, 400);
+    createCanvas(600, 600);
     center = new Point(width/2, height/2);
-    watercolor = new Watercolor(center.x, center.y, 80, 10);
+
+    for (let i=0; i < numLayers; i++) {
+        watercolor = new Watercolor(center.x, center.y, 30, numSides);
+        watercolor.paint();
+    }
 }
 
 function draw() {
-    background('rgba(255, 218, 119, .2)');
-    watercolor.paint();
+    // background('rgba(255, 218, 119, .1)');
+    // watercolor.paint();
 }
 
 class Point {
@@ -49,11 +60,14 @@ class Watercolor {
     constructor(x, y, radius, npoints) {
         this.vertices = [];
         this.vertices = this.makePolygon(x, y, radius, npoints);
-        this.vertices = this.distort();
+        for ( let i=0; i < deformationTimes; i++ ){
+            this.vertices = this.distort();
+        }
+        
     }
 
     paint() {
-        fill('rgba(0, 195, 255, 0.58)');
+        fill('rgba(0, 195, 255, 0.04)');
         noStroke();
         beginShape();
         this.vertices.forEach( (pt) => { return vertex(pt.x, pt.y); } );
@@ -83,6 +97,11 @@ class Watercolor {
         return vertices;
     }
 
+    boundMin(num, min) {
+        num = num < min ? min : num
+        return num
+    }
+
     distortEdge(edge) {
         var length,
             angle,
@@ -92,13 +111,15 @@ class Watercolor {
             newY
         length = edge.length;
         // pick starting point on edge, vary a lil
-        midpoint = edge.getRandomMidpoint(random(0.45, 0.55));
+        var midpointMultiplier = this.boundMin( randomGaussian(.5,.04), 0.1 );
+        midpoint = edge.getRandomMidpoint( midpointMultiplier );
         // midpoint = edge.getRandomMidpoint(0.5);
         // pick angle for breaking edge
-        angle = edge.getAngleFromCenter(midpoint) * randomGaussian(1, .1);
+        var angleMultiplier = this.boundMin( randomGaussian(1, .2), 0.1 );
+        angle = edge.getAngleFromCenter(midpoint) * randomGaussian(1, .2);
         // pick magnitude of distortion, vary w/ length
-        magnitude = randomGaussian(.5, .2) * length
-        magnitude = magnitude < 0 ? 0 : magnitude
+        magnitude = this.boundMin( randomGaussian(.5, .1), 0.1 ) * length
+        // magnitude = magnitude < 0 ? 0 : magnitude
         // get new midpoint
         newX = this.projectX(midpoint.x, angle, magnitude);
         newY = this.projectY(midpoint.y, angle, magnitude);
