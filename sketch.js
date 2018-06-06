@@ -23,10 +23,7 @@ class Edge {
     constructor(points){
         this.first = points[0];
         this.second = points[1];
-        // debugger
         this.length = this.findLength();
-        this.midpoint = this.getMidpoint();
-        this.orthogonalAngle = this.getAngleFromCenter();
     }
 
     findLength() {
@@ -35,16 +32,16 @@ class Edge {
         return Math.pow(Math.pow(a, 2) + Math.pow(b, 2), 0.5);
     }
 
-    getMidpoint() {
-        return new Point((this.first.x + this.second.x)/2, (this.first.y + this.second.y)/2)
+    getRandomMidpoint(num) {
+        return new Point((this.first.x + this.second.x) * (1-num), (this.first.y + this.second.y) * (1-num));
     }
 
     getAngleRadians() {
         return Math.atan2(this.second.y - this.first.y, this.second.x - this.first.x);
     }
 
-    getAngleFromCenter() {
-        return Math.atan2(this.midpoint.y - center.y, this.midpoint.x - center.x);
+    getAngleFromCenter(midpoint) {
+        return Math.atan2(midpoint.y - center.y, midpoint.x - center.x);
     }
 }
 
@@ -90,23 +87,21 @@ class Watercolor {
         var length,
             angle,
             magnitude,
-            vertex,
+            midpoint,
             newX,
             newY
-        // edge = new Edge(neighboringVertices);
         length = edge.length;
         // pick starting point on edge, vary a lil
-        vertex = edge.midpoint;
+        midpoint = edge.getRandomMidpoint(random(0.45, 0.55));
+        // midpoint = edge.getRandomMidpoint(0.5);
         // pick angle for breaking edge
-        angle = edge.orthogonalAngle;
-        // + randomGaussian(HALF_PI, HALF_PI * .1)
+        angle = edge.getAngleFromCenter(midpoint) * randomGaussian(1, .1);
         // pick magnitude of distortion, vary w/ length
-        // magnitude = randomGaussian(1, .2) * length
-        magnitude = length
-        // magnitude = magnitude < 0 ? 0 : magnitude
-        // get new vertex
-        newX = this.projectX(vertex.x, angle, magnitude);
-        newY = this.projectY(vertex.y, angle, magnitude);
+        magnitude = randomGaussian(.5, .2) * length
+        magnitude = magnitude < 0 ? 0 : magnitude
+        // get new midpoint
+        newX = this.projectX(midpoint.x, angle, magnitude);
+        newY = this.projectY(midpoint.y, angle, magnitude);
 
         return new Point(newX, newY);
     }
