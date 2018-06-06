@@ -2,16 +2,23 @@ var watercolor,
     center,
     numSides,
     deformationTimes,
-    numLayers;
+    numLayers,
+    opacity;
 
 numSides = 10;
-numLayers = 100;
-deformationTimes = 5;
+// numLayers = 100;
+// deformationTimes = 5;
+// opacity = 0.04;
+
+numLayers = 1;
+deformationTimes = 1;
+opacity = 0.5;
 
 function setup() {
+    
     createCanvas(600, 600);
     center = new Point(width/2, height/2);
-
+    // background('rgba(255, 218, 119, .1)');
     for (let i=0; i < numLayers; i++) {
         watercolor = new Watercolor(center.x, center.y, 30, numSides);
         watercolor.paint();
@@ -19,7 +26,7 @@ function setup() {
 }
 
 function draw() {
-    // background('rgba(255, 218, 119, .1)');
+
     // watercolor.paint();
 }
 
@@ -35,6 +42,11 @@ class Edge {
         this.first = points[0];
         this.second = points[1];
         this.length = this.findLength();
+        this.slope = this.findSlope();
+    }
+
+    findSlope() {
+        return (this.second.y - this.first.y) / (this.second.x - this.first.x)
     }
 
     findLength() {
@@ -44,7 +56,15 @@ class Edge {
     }
 
     getRandomMidpoint(num) {
-        return new Point((this.first.x + this.second.x) * (1-num), (this.first.y + this.second.y) * (1-num));
+        if ( this.first.x != this.second.x ) {
+            var newX = (this.second.x - this.first.x) * num + this.first.x
+            var newY = this.slope * (this.second.x - this.first.x) + this.first.y
+        } else {
+            var newX = this.first.x;
+            var newY = (this.second.y - this.first.y) * num + this.first.y
+        }
+        return new Point(newX, newY);
+        // return new Point((this.first.x + this.second.x) * (1-num), (this.first.y + this.second.y) * (1-num));
     }
 
     getAngleRadians() {
@@ -67,7 +87,7 @@ class Watercolor {
     }
 
     paint() {
-        fill('rgba(0, 195, 255, 0.04)');
+        fill(`rgba(0, 195, 255, ${opacity})`);
         noStroke();
         beginShape();
         this.vertices.forEach( (pt) => { return vertex(pt.x, pt.y); } );
@@ -98,6 +118,7 @@ class Watercolor {
     }
 
     boundMin(num, min) {
+        // debugger
         num = num < min ? min : num
         return num
     }
@@ -111,14 +132,18 @@ class Watercolor {
             newY
         length = edge.length;
         // pick starting point on edge, vary a lil
-        var midpointMultiplier = this.boundMin( randomGaussian(.5,.04), 0.1 );
+        // var midpointMultiplier = this.boundMin( randomGaussian( 0.5, 0.04), 0.1 );
+        var midpointMultiplier = randomGaussian( 0.5, 0.04 )
+        // console.log(midpointMultiplier)
         midpoint = edge.getRandomMidpoint( midpointMultiplier );
         // midpoint = edge.getRandomMidpoint(0.5);
         // pick angle for breaking edge
-        var angleMultiplier = this.boundMin( randomGaussian(1, .2), 0.1 );
-        angle = edge.getAngleFromCenter(midpoint) * randomGaussian(1, .2);
+        // var angleMultiplier = this.boundMin( randomGaussian(1, .2), 0.1 );
+        var angleMultiplier = 1
+        angle = edge.getAngleFromCenter(midpoint) * angleMultiplier;
         // pick magnitude of distortion, vary w/ length
-        magnitude = this.boundMin( randomGaussian(.5, .1), 0.1 ) * length
+        // magnitude = this.boundMin( randomGaussian(.5, .1), 0.1 ) * length
+        magnitude = 1 * length
         // magnitude = magnitude < 0 ? 0 : magnitude
         // get new midpoint
         newX = this.projectX(midpoint.x, angle, magnitude);
