@@ -1,6 +1,7 @@
 var watercolor,
     center,
     numSides,
+    radius,
     ogDeformationTimes,
     addlDeformationTimes,
     numLayers,
@@ -8,13 +9,17 @@ var watercolor,
     layer;
 
 numSides = 10;
+radius = 100;
+
 numLayers = 50;
 ogDeformationTimes = 7;
-addlDeformationTimes = 3;
+addlDeformationTimes = 4;
 opacity = 0.02;
 
+// testing params
 // numLayers = 1;
-// ogDeformationTimes = 7;
+// ogDeformationTimes = 3;
+// addlDeformationTimes = 0;
 // opacity = 0.5;
 
 function setup() {
@@ -22,22 +27,19 @@ function setup() {
     createCanvas(600, 600);
     center = new Point(width/2, height/2);
     // background('rgba(255, 218, 119, .1)');
-    watercolor = new Watercolor(center.x, center.y, 100, numSides, ogDeformationTimes);
+    watercolor = new Watercolor(center.x, center.y, radius, numSides, ogDeformationTimes);
     for ( let i=0; i < numLayers; i++ ) {
-        for ( let j=0; j < addlDeformationTimes; j++ ) {
-            layer = new Watercolor(center.x, center.y, 80, numSides, 
-                addlDeformationTimes, watercolor.vertices);
-            layer.paint();
-            window.layer = null;
-            delete window.layer;
-        }
-        // watercolor.paint();
+        // i think it looks more nicely diffuse at edges to have layers be slightly smaller?
+        layer = new Watercolor(center.x, center.y, radius * (4/5), numSides, 
+            addlDeformationTimes, watercolor.vertices);
+        
+        layer.paint();
+        window.layer = null;
+        delete window.layer;
     }
 }
 
 function draw() {
-
-    // watercolor.paint();
 }
 
 class Point {
@@ -92,11 +94,10 @@ class Watercolor {
         for ( let i=0; i < numDeformations; i++ ){
             this.vertices = this.distort();
         }
-        console.log(this.vertices.length);
     }
 
     paint() {
-        fill(`rgba(0, 195, 255, ${opacity})`);
+        fill(`rgba(191, 157, 221, ${opacity})`);
         noStroke();
         beginShape();
         this.vertices.forEach( (pt) => { return vertex(pt.x, pt.y); } );
@@ -135,49 +136,35 @@ class Watercolor {
     }
 
     distortEdge(edge) {
-        var length,
-            angle,
-            magnitude,
-            midpoint,
-            newX,
-            newY
-        length = edge.length;
         // pick starting point on edge, vary a lil
-        // var midpointMultiplier = this.bound( randomGaussian(0.5, 0.2), 0.01, 0.99 );
-        var midpointMultiplier = randomGaussian( 0.5, 0.3 )
-        midpoint = edge.getRandomMidpoint( midpointMultiplier );
-        // midpoint = edge.getRandomMidpoint(0.5);
+        var midpoint = edge.getRandomMidpoint( randomGaussian( 0.5, 0.3 ) );
+
         // pick angle for breaking edge
-        // var angleMultiplier = this.bound( randomGaussian(1, .3), 0.1, 0.9 );
-        var angleMultiplier = randomGaussian(1, .5)
-        // var angleMultiplier = 1
-        angle = edge.getAngleFromCenter(midpoint) * angleMultiplier;
+        var angle = edge.getAngleFromCenter(midpoint) + randomGaussian(0, 2);
+
         // pick magnitude of distortion, vary w/ length
-        magnitude = this.bound( randomGaussian(.3, .2), 0.1 ) * length
-        // magnitude = 1 * length
-        // magnitude = magnitude < 0 ? 0 : magnitude
+        var magnitude = this.bound( randomGaussian(.3, .2), 0.1 ) * edge.length;
+
         // get new midpoint
-        newX = this.projectX(midpoint.x, angle, magnitude);
-        newY = this.projectY(midpoint.y, angle, magnitude);
+        var newX = this.projectX(midpoint.x, angle, magnitude);
+        var newY = this.projectY(midpoint.y, angle, magnitude);
 
         return new Point(newX, newY);
     }
 
     distort() {
-        var edge,
-            ptA,
-            ptB,
-            newVertex;
-        var newVertices = []
+        var newVertices = [];
+        const lastIndex = this.vertices.length-1;
         for ( let i=0; i<this.vertices.length; i++ ) {
-            ptA = this.vertices[i];
+            var ptA = this.vertices[i];
             // wrap around to first vertex
-            ptB = i == this.vertices.length-1 ? this.vertices[0] : this.vertices[i+1];
+            var ptB = i === lastIndex ? this.vertices[0] : this.vertices[i+1];
 
-            edge = new Edge( [ptA, ptB] );
-            newVertex = this.distortEdge(edge);
+            var edge = new Edge( [ptA, ptB] );
+            var newVertex = this.distortEdge(edge);
             newVertices.push(this.vertices[i],newVertex);
         }
+
         return newVertices;
         
     }
