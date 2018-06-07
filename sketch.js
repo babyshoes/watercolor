@@ -1,27 +1,37 @@
 var watercolor,
     center,
     numSides,
-    deformationTimes,
+    ogDeformationTimes,
+    addlDeformationTimes,
     numLayers,
-    opacity;
+    opacity,
+    layer;
 
 numSides = 10;
-// numLayers = 100;
-// deformationTimes = 5;
-// opacity = 0.04;
+numLayers = 50;
+ogDeformationTimes = 7;
+addlDeformationTimes = 3;
+opacity = 0.02;
 
-numLayers = 1;
-deformationTimes = 7;
-opacity = 0.5;
+// numLayers = 1;
+// ogDeformationTimes = 7;
+// opacity = 0.5;
 
 function setup() {
     
     createCanvas(600, 600);
     center = new Point(width/2, height/2);
     // background('rgba(255, 218, 119, .1)');
-    for (let i=0; i < numLayers; i++) {
-        watercolor = new Watercolor(center.x, center.y, 40, numSides);
-        watercolor.paint();
+    watercolor = new Watercolor(center.x, center.y, 100, numSides, ogDeformationTimes);
+    for ( let i=0; i < numLayers; i++ ) {
+        for ( let j=0; j < addlDeformationTimes; j++ ) {
+            layer = new Watercolor(center.x, center.y, 80, numSides, 
+                addlDeformationTimes, watercolor.vertices);
+            layer.paint();
+            window.layer = null;
+            delete window.layer;
+        }
+        // watercolor.paint();
     }
 }
 
@@ -64,7 +74,6 @@ class Edge {
             var newY = (this.second.y - this.first.y) * num + this.first.y
         }
         return new Point(newX, newY);
-        // return new Point((this.first.x + this.second.x) * (1-num), (this.first.y + this.second.y) * (1-num));
     }
 
     getAngleRadians() {
@@ -77,13 +86,13 @@ class Edge {
 }
 
 class Watercolor {
-    constructor(x, y, radius, npoints) {
-        this.vertices = [];
-        this.vertices = this.makePolygon(x, y, radius, npoints);
-        for ( let i=0; i < deformationTimes; i++ ){
+    constructor(x, y, radius, npoints, numDeformations, vertices=[]) {
+        this.vertices = vertices;
+        this.vertices = this.vertices.length === 0 ? this.makePolygon(x, y, radius, npoints) : this.vertices;
+        for ( let i=0; i < numDeformations; i++ ){
             this.vertices = this.distort();
         }
-        
+        console.log(this.vertices.length);
     }
 
     paint() {
@@ -118,7 +127,6 @@ class Watercolor {
     }
 
     bound(num, min, max=-999) {
-        // debugger
         num = num < min ? min : num
         if ( max != -999 ) {
             num = num > max ? max : num
@@ -141,9 +149,9 @@ class Watercolor {
         // midpoint = edge.getRandomMidpoint(0.5);
         // pick angle for breaking edge
         // var angleMultiplier = this.bound( randomGaussian(1, .3), 0.1, 0.9 );
-        var angleMultiplier = randomGaussian(1, .35)
+        var angleMultiplier = randomGaussian(1, .5)
         // var angleMultiplier = 1
-        angle = edge.getAngleFromCenter(midpoint);
+        angle = edge.getAngleFromCenter(midpoint) * angleMultiplier;
         // pick magnitude of distortion, vary w/ length
         magnitude = this.bound( randomGaussian(.3, .2), 0.1 ) * length
         // magnitude = 1 * length
